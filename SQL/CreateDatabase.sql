@@ -1,0 +1,82 @@
+USE master
+GO
+IF DB_ID('LibraryDb') IS NOT NULL
+BEGIN
+    ALTER DATABASE LibraryDb SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE LibraryDb;
+END
+GO
+
+CREATE DATABASE LibraryDb;
+GO
+
+USE LibraryDb;
+GO
+CREATE TABLE Publisher (
+    Id   INT IDENTITY(1,1) PRIMARY KEY,
+    Name NVARCHAR(100) UNIQUE  NOT NULL
+);
+GO
+CREATE TABLE Author (
+    Id   INT IDENTITY(1,1) PRIMARY KEY,
+    FullName NVARCHAR(150) NOT NULL
+);
+GO
+CREATE TABLE Genre (
+    Id   INT IDENTITY(1,1) PRIMARY KEY,
+    Name NVARCHAR(50) UNIQUE  NOT NULL
+);
+GO
+CREATE TABLE Book(
+    Id   INT IDENTITY(1,1) PRIMARY KEY,
+    Title NVARCHAR(200) NOT NULL,
+    PublishYear INT NOT NULL CHECK (PublishYear BETWEEN 1400 AND 2100),
+    Pages INT NOT NULL CHECK(Pages > 0),
+    Isbn NVARCHAR(20) UNIQUE NOT NULL,
+    PublisherId INT NOT NULL,
+    FOREIGN KEY (PublisherId) REFERENCES Publisher(Id)
+);
+GO
+CREATE TABLE BookAuthor(
+    BookId INT NOT NULL,
+    AuthorId INT NOT NULL,
+    FOREIGN KEY (BookId) REFERENCES Book(Id),
+    FOREIGN KEY (AuthorId) REFERENCES Author(Id),
+    PRIMARY KEY (BookId,AuthorId)
+);
+GO
+CREATE TABLE BookGenre(
+    BookId INT NOT NULL,
+    GenreId INT NOT NULL,
+    FOREIGN KEY (BookId) REFERENCES Book(Id),
+    FOREIGN KEY (GenreId) REFERENCES Genre(Id),
+    PRIMARY KEY (BookId,GenreId)
+);
+GO
+CREATE TABLE BookCopy(
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    BookId INT NOT NULL,
+    FOREIGN KEY (BookId) REFERENCES Book(Id),
+    InventoryNumber NVARCHAR(30) UNIQUE NOT NULL,
+    Status NVARCHAR(20) NOT NULL DEFAULT 'Available' CHECK (Status IN('Available','Borrowed','Lost','Damaged'))
+);
+GO
+CREATE TABLE Reader(
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    FullName NVARCHAR(150) NOT NULL,
+    Email NVARCHAR(100) UNIQUE NOT NULL,
+    Phone NVARCHAR(20)
+);
+GO
+CREATE TABLE Loan(
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    BookCopyId INT NOT NULL,
+    FOREIGN KEY (BookCopyId) REFERENCES BookCopy(Id),
+    ReaderId INT NOT NULL,
+    FOREIGN KEY (ReaderId) REFERENCES Reader(Id),
+    LoanDate DATE DEFAULT GETDATE() NOT NULL,
+    DueDate DATE NOT NULL,
+    ReturnDate DATE,
+    CHECK(DueDate > LoanDate)
+);
+GO
